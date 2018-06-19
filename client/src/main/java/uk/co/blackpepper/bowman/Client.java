@@ -61,6 +61,13 @@ public class Client<T> {
 		this.restOperations = restOperations;
 	}
 
+	/**
+	 * Get a count of the total number of instances from the base resource (determined
+	 * by the class's {@link uk.co.blackpepper.bowman.annotation.RemoteResource}
+	 * annotation).
+	 *
+	 * @return the total number of entities, 0 or more
+	 */
 	public long getCount() {
 		return getAll(0, 1).getMetadata().getTotalElements();
 	}
@@ -101,6 +108,16 @@ public class Client<T> {
 		return getAll(baseUri);
 	}
 
+	/**
+	 * GET a collection of entities from the entity's base resource (determined by the class's
+	 * {@link uk.co.blackpepper.bowman.annotation.RemoteResource} annotation) wrapped in a new
+	 * instance of PagedResources.
+	 *
+	 * @param page The page number to be retrieved, starting at 0
+	 * @param size The number of items per page to be retrieved
+	 *
+	 * @return A PagedResources<T> instance with a collection of the entities and the page metadata
+	 */
 	public PagedResources<T> getAll(int page, int size) {
 		URI uri = UriComponentsBuilder
 				.fromUri(baseUri)
