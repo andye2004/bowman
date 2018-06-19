@@ -62,7 +62,7 @@ public class Client<T> {
 	}
 
 	/**
-	 * Get a count of the total number of instances from the base resource (determined
+	 * GET a count of the total number of instances from the base resource (determined
 	 * by the class's {@link uk.co.blackpepper.bowman.annotation.RemoteResource}
 	 * annotation).
 	 *
