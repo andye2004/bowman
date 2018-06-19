@@ -60,6 +60,10 @@ public class Client<T> {
 		this.proxyFactory = proxyFactory;
 		this.restOperations = restOperations;
 	}
+
+	public long getCount() {
+		return getAll(0, 1).getMetadata().getTotalElements();
+	}
 	
 	/**
 	 * GET a single entity from the entity's base resource (determined by the class's

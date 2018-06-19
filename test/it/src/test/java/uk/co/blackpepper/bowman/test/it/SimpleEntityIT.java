@@ -218,4 +218,10 @@ public class SimpleEntityIT extends AbstractIT {
 		assertThat(page.getMetadata().getTotalPages(), is(2L));
 		assertThat(page.getMetadata().getTotalElements(), is(2L));
 	}
+
+	@Test
+	public void canGetEntityCount() {
+		client.post(new SimpleEntity());
+		assertThat(client.getCount(), is(1L));
+	}
 }
