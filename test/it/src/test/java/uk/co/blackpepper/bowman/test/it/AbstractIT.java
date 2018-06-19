@@ -130,5 +130,14 @@ public class AbstractIT {
 				// perhaps already deleted; continue
 			}
 		}
+
+		for (URI createdEntity : createdEntityRecordingInterceptor.getCreatedEntities()) {
+			try {
+				cleanUpRestTemplate.delete(createdEntity);
+			}
+			catch (RestClientException exception) {
+				// perhaps already deleted; continue
+			}
+		}
 	}
 }

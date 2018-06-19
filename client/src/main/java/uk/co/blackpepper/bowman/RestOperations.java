@@ -18,6 +18,7 @@ package uk.co.blackpepper.bowman;
 import java.net.URI;
 import java.util.Collections;
 
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.http.HttpStatus;
@@ -66,15 +67,24 @@ class RestOperations {
 		}
 		catch (HttpClientErrorException exception) {
 			if (exception.getStatusCode() == HttpStatus.NOT_FOUND) {
-				return Resources.wrap(Collections.<T>emptyList());
+				return Resources.wrap(Collections.emptyList());
 			}
-			
+
 			throw exception;
 		}
 		
 		JavaType innerType = objectMapper.getTypeFactory().constructParametricType(Resource.class, entityType);
 		JavaType targetType = objectMapper.getTypeFactory().constructParametricType(Resources.class, innerType);
 		
+		return objectMapper.convertValue(node, targetType);
+	}
+
+	public <T> PagedResources<Resource<T>> getPagedResources(URI uri, Class<T> entityType) {
+		ObjectNode node = restTemplate.getForObject(uri, ObjectNode.class);
+
+		JavaType innerType = objectMapper.getTypeFactory().constructParametricType(Resource.class, entityType);
+		JavaType targetType = objectMapper.getTypeFactory().constructParametricType(PagedResources.class, innerType);
+
 		return objectMapper.convertValue(node, targetType);
 	}
 	

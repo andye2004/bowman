@@ -19,6 +19,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -94,6 +95,23 @@ public class Client<T> {
 	 */
 	public Iterable<T> getAll() {
 		return getAll(baseUri);
+	}
+
+	public PagedResources<T> getAll(int page, int size) {
+		URI uri = UriComponentsBuilder
+				.fromUri(baseUri)
+				.queryParam("page", page)
+				.queryParam("size", size)
+				.build().toUri();
+
+		PagedResources<Resource<T>> resources = restOperations.getPagedResources(uri, entityType);
+
+		List<T> result = new ArrayList<>();
+		for (Resource<T> resource : resources) {
+			result.add(proxyFactory.create(resource, restOperations));
+		}
+
+		return new PagedResources<>(result, resources.getMetadata(), resources.getLinks());
 	}
 	
 	/**
