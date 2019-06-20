@@ -1,6 +1,7 @@
 package uk.co.blackpepper.bowman;
 
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 
 import org.springframework.hateoas.Links;
 import org.springframework.hateoas.Resource;
@@ -51,12 +52,25 @@ class ResourceDeserializer extends StdDeserializer<Resource<?>> implements Conte
 		return new Resource<>(content, links);
 	}
 	
+	TypeResolver getTypeResolver() {
+		return typeResolver;
+	}
+	
+	Configuration getConfiguration() {
+		return configuration;
+	}
+	
 	private Class<?> getResourceDeserializationType(Links links) {
 		Class<?> resourceContentType = typeResolver.resolveType(handledType(), links, configuration);
 		
 		if (resourceContentType.isInterface()) {
 			ProxyFactory factory = new ProxyFactory();
 			factory.setInterfaces(new Class[] {resourceContentType});
+			resourceContentType = factory.createClass();
+		}
+		else if (Modifier.isAbstract(resourceContentType.getModifiers())) {
+			ProxyFactory factory = new ProxyFactory();
+			factory.setSuperclass(resourceContentType);
 			resourceContentType = factory.createClass();
 		}
 		
