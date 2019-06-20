@@ -19,6 +19,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -59,6 +60,17 @@ public class Client<T> {
 		this.proxyFactory = proxyFactory;
 		this.restOperations = restOperations;
 	}
+
+	/**
+	 * GET a count of the total number of instances from the base resource (determined
+	 * by the class's {@link uk.co.blackpepper.bowman.annotation.RemoteResource}
+	 * annotation).
+	 *
+	 * @return the total number of entities, 0 or more
+	 */
+	public long getCount() {
+		return getPage(0, 1).getTotalElements();
+	}
 	
 	/**
 	 * GET a single entity from the entity's base resource (determined by the class's
@@ -94,6 +106,33 @@ public class Client<T> {
 	 */
 	public Iterable<T> getAll() {
 		return getAll(baseUri);
+	}
+
+	/**
+	 * GET a collection of entities from the entity's base resource (determined by the class's
+	 * {@link uk.co.blackpepper.bowman.annotation.RemoteResource} annotation) wrapped in a new
+	 * instance of PagedResources.
+	 *
+	 * @param page The page number to be retrieved, starting at 0
+	 * @param size The number of items per page to be retrieved
+	 *
+	 * @return A PagedResources<T> instance with a collection of the entities and the page metadata
+	 */
+	public Page<T> getPage(int page, int size) {
+		URI uri = UriComponentsBuilder
+				.fromUri(baseUri)
+				.queryParam("page", page)
+				.queryParam("size", size)
+				.build().toUri();
+
+		PagedResources<Resource<T>> resources = restOperations.getPagedResources(uri, entityType);
+
+		List<T> result = new ArrayList<>();
+		for (Resource<T> resource : resources) {
+			result.add(proxyFactory.create(resource, restOperations));
+		}
+
+		return new Page<>(result, resources.getMetadata());
 	}
 	
 	/**

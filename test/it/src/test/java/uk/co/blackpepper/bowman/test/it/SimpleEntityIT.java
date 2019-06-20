@@ -23,6 +23,7 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 
 import uk.co.blackpepper.bowman.Client;
+import uk.co.blackpepper.bowman.Page;
 import uk.co.blackpepper.bowman.annotation.LinkedResource;
 import uk.co.blackpepper.bowman.test.it.model.SimpleEntity;
 
@@ -189,5 +190,35 @@ public class SimpleEntityIT extends AbstractIT {
 		client.patch(retrieved.getId(), new SimpleEntityPatch(retrieved.getRelated()));
 
 		assertThat(client.get(retrieved.getId()).getRelated().getName(), is("related2"));
+	}
+
+	@Test
+	public void canGetPagedEntitiesUsingDefaults() {
+		client.post(new SimpleEntity());
+		client.post(new SimpleEntity());
+
+		Page<SimpleEntity> page = client.getPage(0, 0);
+
+		assertThat(page.getCurrentPage(), is(0L));
+		assertThat(page.getTotalPages(), is(1L));
+		assertThat(page.getTotalElements(), is(2L));
+	}
+
+	@Test
+	public void canGetPagedEntitiesUsingValues() {
+		client.post(new SimpleEntity());
+		client.post(new SimpleEntity());
+
+		Page<SimpleEntity> page = client.getPage(0, 1);
+
+		assertThat(page.getCurrentPage(), is(0L));
+		assertThat(page.getTotalPages(), is(2L));
+		assertThat(page.getTotalElements(), is(2L));
+	}
+
+	@Test
+	public void canGetEntityCount() {
+		client.post(new SimpleEntity());
+		assertThat(client.getCount(), is(1L));
 	}
 }
