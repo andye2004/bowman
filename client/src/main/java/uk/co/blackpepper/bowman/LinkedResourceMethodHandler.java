@@ -17,6 +17,19 @@ import uk.co.blackpepper.bowman.annotation.LinkedResource;
 
 class LinkedResourceMethodHandler extends AbstractPropertyAwareMethodHandler {
 
+	private static final class LinkedResourceResult {
+		
+		private Object value;
+		
+		LinkedResourceResult(Object value) {
+			this.value = value;
+		}
+		
+		Object getValue() {
+			return value;
+		}
+	}
+	
 	private final Resource resource;
 
 	private final RestOperations restOperations;
@@ -25,7 +38,7 @@ class LinkedResourceMethodHandler extends AbstractPropertyAwareMethodHandler {
 
 	private final PropertyValueFactory propertyValueFactory = new DefaultPropertyValueFactory();
 
-	private final Map<String, Object> linkedResourceResults = new HashMap<>();
+	private final Map<String, LinkedResourceResult> linkedResourceResults = new HashMap<>();
 
 	LinkedResourceMethodHandler(Resource resource, RestOperations restOperations, ClientProxyFactory proxyFactory) {
 		super(resource.getContent().getClass());
@@ -60,7 +73,7 @@ class LinkedResourceMethodHandler extends AbstractPropertyAwareMethodHandler {
 
 	private void invokeSetterMethod(Method method, Object[] args) {
 		final String getterName = getGetterFromSetter(method).getName();
-		linkedResourceResults.put(getterName, args[0]);
+		linkedResourceResults.put(getterName, new LinkedResourceResult(args[0]));
 	}
 
 	private Method getGetterFromSetter(Method method) {
@@ -71,26 +84,36 @@ class LinkedResourceMethodHandler extends AbstractPropertyAwareMethodHandler {
 
 	private Object invokeAnnotatedMethod(Object self, Method method, Method proceed, Object[] args)
 	throws InvocationTargetException, IllegalAccessException {
-		Object linkedResourceResult = linkedResourceResults.get(method.getName());
+		LinkedResourceResult result = linkedResourceResults.get(method.getName());
 
-		if (linkedResourceResult == null) {
-			linkedResourceResult = resolveLinkedResource(self, method, proceed, args);
-			linkedResourceResults.put(method.getName(), linkedResourceResult);
+		if (result == null) {
+			Object resultValue = resolveLinkedResource(self, method, proceed, args);
+
+			result = new LinkedResourceResult(resultValue);
+
+			linkedResourceResults.put(method.getName(), result);
 		}
 
-		return linkedResourceResult;
+		return result.getValue();
 	}
 
 	private Object resolveLinkedResource(Object self, Method method, Method proceed, Object[] args)
 			throws IllegalAccessException, InvocationTargetException {
-		
+
 		URI associationResource = new MethodLinkUriResolver(resource).resolveForMethod(method, args);
-		
+
 		if (Collection.class.isAssignableFrom(method.getReturnType())) {
 			Class<?> linkedEntityType = (Class<?>) ((ParameterizedType) method.getGenericReturnType())
 				.getActualTypeArguments()[0];
-			
-			return resolveCollectionLinkedResource(associationResource, linkedEntityType, self, proceed);
+
+			if (proceed == null) {
+				return resolveCollectionLinkedResource(getLinkedResources(associationResource,
+						linkedEntityType), method);
+			}
+			else {
+				return resolveCollectionLinkedResource(getLinkedResources(associationResource, linkedEntityType),
+						self, proceed);
+			}
 		}
 
 		return resolveSingleLinkedResource(associationResource, method.getReturnType());
@@ -98,33 +121,44 @@ class LinkedResourceMethodHandler extends AbstractPropertyAwareMethodHandler {
 
 	private <F> F resolveSingleLinkedResource(URI associationResource, Class<F> linkedEntityType) {
 		Resource<F> linkedResource = restOperations.getResource(associationResource, linkedEntityType);
-		
+
 		if (linkedResource == null) {
 			return null;
 		}
-		
+
 		return proxyFactory.create(linkedResource, restOperations);
 	}
 
-	private <F> Collection<F> resolveCollectionLinkedResource(URI associationResource, Class<F> linkedEntityType,
-		Object contextEntity, Method originalMethod) throws IllegalAccessException, InvocationTargetException {
-		
-		Resources<Resource<F>> resources = restOperations.getResources(associationResource, linkedEntityType);
-		
+	private <F> Collection<F> resolveCollectionLinkedResource(Resources<Resource<F>> resources, Object contextEntity,
+		Method originalMethod) throws IllegalAccessException, InvocationTargetException {
+
 		@SuppressWarnings("unchecked")
 		Collection<F> collection = (Collection<F>) originalMethod.invoke(contextEntity);
-		
+
 		if (collection == null) {
 			collection = propertyValueFactory.createCollection(originalMethod.getReturnType());
 		}
 		else {
 			collection.clear();
 		}
+		return updateCollectionWithLinkedResources(collection, resources);
+	}
 
+	private <F> Collection<F> resolveCollectionLinkedResource(Resources<Resource<F>> resources, Method method) {
+		return updateCollectionWithLinkedResources(
+				propertyValueFactory.createCollection(method.getReturnType()), resources);
+	}
+
+	private <F> Collection<F> updateCollectionWithLinkedResources(Collection<F> collection,
+		Resources<Resource<F>> resources) {
 		for (Resource<F> fResource : resources) {
 			collection.add(proxyFactory.create(fResource, restOperations));
 		}
-		
+
 		return collection;
+	}
+
+	private <F> Resources<Resource<F>> getLinkedResources(URI associationResource, Class<F> linkedEntityType) {
+		return restOperations.getResources(associationResource, linkedEntityType);
 	}
 }
