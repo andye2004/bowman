@@ -24,6 +24,7 @@ import org.springframework.hateoas.PagedResources;
 import com.google.common.collect.Lists;
 
 import uk.co.blackpepper.bowman.Client;
+import uk.co.blackpepper.bowman.Page;
 import uk.co.blackpepper.bowman.annotation.LinkedResource;
 import uk.co.blackpepper.bowman.test.it.model.SimpleEntity;
 
@@ -208,7 +209,7 @@ public class SimpleEntityIT extends AbstractIT {
 	public void canGetPagedEntitiesUsingValues() {
 		client.post(new SimpleEntity());
 		client.post(new SimpleEntity());
-
+    
 		PagedResources<SimpleEntity> page = client.getAll(0, 1);
 
 		assertThat(page.getMetadata().getNumber(), is(0L));
