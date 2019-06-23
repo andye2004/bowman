@@ -19,6 +19,7 @@ import java.net.URI;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.hateoas.PagedResources;
 
 import com.google.common.collect.Lists;
 
@@ -197,23 +198,23 @@ public class SimpleEntityIT extends AbstractIT {
 		client.post(new SimpleEntity());
 		client.post(new SimpleEntity());
 
-		Page<SimpleEntity> page = client.getPage(0, 0);
+		PagedResources<SimpleEntity> page = client.getAll(0, 0);
 
-		assertThat(page.getCurrentPage(), is(0L));
-		assertThat(page.getTotalPages(), is(1L));
-		assertThat(page.getTotalElements(), is(2L));
+		assertThat(page.getMetadata().getNumber(), is(0L));
+		assertThat(page.getMetadata().getTotalPages(), is(1L));
+		assertThat(page.getMetadata().getTotalElements(), is(2L));
 	}
 
 	@Test
 	public void canGetPagedEntitiesUsingValues() {
 		client.post(new SimpleEntity());
 		client.post(new SimpleEntity());
+    
+		PagedResources<SimpleEntity> page = client.getAll(0, 1);
 
-		Page<SimpleEntity> page = client.getPage(0, 1);
-
-		assertThat(page.getCurrentPage(), is(0L));
-		assertThat(page.getTotalPages(), is(2L));
-		assertThat(page.getTotalElements(), is(2L));
+		assertThat(page.getMetadata().getNumber(), is(0L));
+		assertThat(page.getMetadata().getTotalPages(), is(2L));
+		assertThat(page.getMetadata().getTotalElements(), is(2L));
 	}
 
 	@Test

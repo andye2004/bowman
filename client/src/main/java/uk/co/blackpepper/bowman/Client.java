@@ -69,7 +69,7 @@ public class Client<T> {
 	 * @return the total number of entities, 0 or more
 	 */
 	public long getCount() {
-		return getPage(0, 1).getTotalElements();
+		return getAll(0, 1).getMetadata().getTotalElements();
 	}
 	
 	/**
@@ -118,7 +118,7 @@ public class Client<T> {
 	 *
 	 * @return A PagedResources<T> instance with a collection of the entities and the page metadata
 	 */
-	public Page<T> getPage(int page, int size) {
+	public PagedResources<T> getAll(int page, int size) {
 		URI uri = UriComponentsBuilder
 				.fromUri(baseUri)
 				.queryParam("page", page)
@@ -132,7 +132,7 @@ public class Client<T> {
 			result.add(proxyFactory.create(resource, restOperations));
 		}
 
-		return new Page<>(result, resources.getMetadata());
+		return new PagedResources<>(result, resources.getMetadata(), resources.getLinks());
 	}
 	
 	/**
